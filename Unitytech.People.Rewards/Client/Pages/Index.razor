@@ -1,0 +1,29 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Unitytech.People.Rewards.Shared
+@attribute [Authorize]
+@inject HttpClient Http
+
+<PageTitle>People</PageTitle>
+
+<h1>Heej!</h1>
+
+Welkom bij de People Rewards app.
+
+
+@code{
+    Person[] people { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            people = await Http.GetFromJsonAsync<Person[]>("People");
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+    }
+}
