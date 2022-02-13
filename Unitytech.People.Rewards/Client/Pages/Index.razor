@@ -11,7 +11,19 @@
 
 Welkom bij de People Rewards app.
 
-
+<RadzenDataGrid AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true"
+                Data="@people" TItem="Person">
+    <Columns>
+        <RadzenDataGridColumn TItem="Person" Property="Employee.LastName" Title="Lid">
+            <Template Context="person">
+                <h5 class="mt-1 mb-0">@person?.FirstName @person?.MiddleName @person?.LastName</h5>
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Person" Property="BirthDate" Title="Verjaardag" FormatString="{0:d}" />
+        <RadzenDataGridColumn TItem="Person" Property="MemberSince" Title="Lid sinds" />
+        <RadzenDataGridColumn TItem="Person" Property="MemberUntil" Title="Lid tot" />
+    </Columns>
+</RadzenDataGrid>
 @code{
     Person[] people { get; set; }
 

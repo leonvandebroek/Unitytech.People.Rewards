@@ -25,7 +25,7 @@ public class PeopleController : ControllerBase
     {
         return context.People.ToList();
     }
-    [HttpGet]
+    [HttpGet("GetById")]
     public Person? GetById(Guid id)
     {
         var person = context.People.FirstOrDefault(p => p.Id == id);
