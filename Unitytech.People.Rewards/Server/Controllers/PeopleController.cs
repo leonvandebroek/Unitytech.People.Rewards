@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Unitytech.People.Rewards.Data.Entities;
 using Unitytech.People.Rewards.Data.Repository;
-using Unitytech.People.Rewards.Shared;
 
 namespace Unitytech.People.Rewards.Server.Controllers;
 
