@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Radzen;
 using Unitytech.People.Rewards.Client;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -14,6 +15,7 @@ builder.Services.AddHttpClient("Unitytech.People.Rewards.ServerAPI", client => c
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Unitytech.People.Rewards.ServerAPI"));
 
 builder.Services.AddApiAuthorization();
+builder.Services.AddSingleton<DialogService>();
 
 await builder.Build().RunAsync();
 

@@ -1,0 +1,67 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Unitytech.People.Rewards.Shared
+@inject DialogService DialogService
+@inject HttpClient Http
+
+<RadzenCard>
+    <RadzenTemplateForm Data="@Person" Submit="@((Person args) => { Submit(args); })">
+        <h4 class="mb-4">Initialen</h4>
+        <RadzenTextBox @bind-Value="@Person.Initials" Class="w-100" />
+        <h4 class="mb-4">Voornaam</h4>
+        <RadzenTextBox @bind-Value="@Person.FirstName" Class="w-100" />
+        <h4 class="mb-4">Tussenvoegsels</h4>
+        <RadzenTextBox @bind-Value="@Person.MiddleName" Class="w-100" />
+        <h4 class="mb-4">Achternaam</h4>
+        <RadzenTextBox @bind-Value="@Person.LastName" Class="w-100" />
+
+        <h4 class="mb-4">Geboortedatum</h4>
+        <RadzenDatePicker DateFormat="dd-MM-yyyy" @bind-Value="@Person.BirthDate" Class="w-100" />
+
+
+        <h4 class="mb-4">Lidnummer</h4>
+        <RadzenTextBox @bind-Value="@Person.MemberNumber" Class="w-100" />
+        <h4 class="mb-4">Afdeling</h4>
+        <RadzenTextBox @bind-Value="@Person.Department" Class="w-100" />
+        <h4 class="mb-4">Inschrijfdatum</h4>
+        <RadzenDatePicker DateFormat="dd-MM-yyyy" @bind-Value="@Person.MemberSince" Class="w-100" />
+        <h4 class="mb-4">Uitschrijfdatum</h4>
+        <RadzenDatePicker DateFormat="dd-MM-yyyy" @bind-Value="@Person.MemberUntil" Class="w-100" />
+
+        <h4 class="mb-4">Straat</h4>
+        <RadzenTextBox @bind-Value="@Person.Street" Class="w-100" />
+        <h4 class="mb-4">Huisnummer</h4>
+        <RadzenNumeric @bind-Value="@Person.StreetNumber" Class="w-100" />
+        <h4 class="mb-4">Postcode</h4>
+        <RadzenTextBox @bind-Value="@Person.Zipcode" Class="w-100" />
+        <h4 class="mb-4">Plaats</h4>
+        <RadzenNumeric @bind-Value="@Person.City" Class="w-100" />
+
+        <h4 class="mb-4">E-mailadres</h4>
+        <RadzenTextBox @bind-Value="@Person.Email" Class="w-100" />
+        <h4 class="mb-4">Telefoonnummer</h4>
+        <RadzenNumeric @bind-Value="@Person.Phone" Class="w-100" />
+
+        <RadzenButton ButtonType="ButtonType.Submit" Icon="save" Text="Save" />
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+    [Parameter]
+    public Person Person { get; set; } = new Person();
+
+    async void Submit(Person arg)
+    {
+        try
+        {
+            var reuslt = await Http.PostAsJsonAsync<Person>("People", Person);
+            DialogService.Close();
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+    }
+
+}
+
