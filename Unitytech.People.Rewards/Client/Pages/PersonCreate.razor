@@ -35,7 +35,7 @@
         <h4 class="mb-4">Postcode</h4>
         <RadzenTextBox @bind-Value="@Person.Zipcode" Class="w-100" />
         <h4 class="mb-4">Plaats</h4>
-        <RadzenNumeric @bind-Value="@Person.City" Class="w-100" />
+        <RadzenTextBox @bind-Value="@Person.City" Class="w-100" />
 
         <h4 class="mb-4">E-mailadres</h4>
         <RadzenTextBox @bind-Value="@Person.Email" Class="w-100" />
@@ -49,12 +49,21 @@
 @code {
     [Parameter]
     public Person Person { get; set; } = new Person();
+    [Parameter]
+    public bool IsEdit { get; set; } = false;
 
     async void Submit(Person arg)
     {
         try
         {
-            var reuslt = await Http.PostAsJsonAsync<Person>("People", Person);
+            if (!IsEdit)
+            {
+                var result = await Http.PostAsJsonAsync<Person>("People", Person);
+            }
+            else
+            {
+                var result = await Http.PutAsJsonAsync<Person>("People", Person);
+            }
             DialogService.Close();
         }
         catch (AccessTokenNotAvailableException exception)

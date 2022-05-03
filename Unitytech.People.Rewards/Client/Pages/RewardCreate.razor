@@ -1,0 +1,59 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Unitytech.People.Rewards.Shared
+@inject DialogService DialogService
+@inject HttpClient Http
+
+<RadzenCard>
+    <RadzenTemplateForm Data="@Reward" Submit="@((Reward args) => { Submit(args); })">
+        <h4 class="mb-4">Naam</h4>
+        <RadzenTextBox @bind-Value="@Reward.Name" Class="w-100" />
+
+        <h4 class="mb-4">Omschrijving</h4>
+        <RadzenHtmlEditor @bind-Value="@Reward.Description" Class="w-100" />
+
+        <h4 class="mb-4">Verdiend met aantal maanden lidmaatschap</h4>
+        <RadzenNumeric @bind-Value="@Reward.IntervalInMonths" Class="w-100" />
+
+        <h4 class="mb-4">Document URL</h4>
+        <RadzenTextBox @bind-Value="@Reward.AwardDocument" Class="w-100" />
+
+        <h4 class="mb-4">Afbeelding URL</h4>
+        <RadzenTextBox @bind-Value="@Reward.Image" Class="w-100" />
+
+        <RadzenButton ButtonType="ButtonType.Submit" Icon="save" Text="Save" />
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+    [Parameter]
+    public Reward Reward { get; set; } = new Reward();
+    [Parameter]
+    public bool IsEdit { get; set; } = false;
+
+    async void Submit(Reward arg)
+    {
+        try
+        {
+            if (!IsEdit)
+            {
+                var result = await Http.PostAsJsonAsync<Reward>("Rewards", Reward);
+            }
+            else
+            {
+                var result = await Http.PutAsJsonAsync<Reward>("Rewards", Reward);
+            }
+            DialogService.Close();
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception);
+        }
+    }
+
+}
+

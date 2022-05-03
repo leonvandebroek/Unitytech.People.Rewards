@@ -52,6 +52,18 @@ public class RewardsController : ControllerBase
         context.Rewards.Add(Reward);
         context.SaveChanges();
     }
+    [HttpPost("AwardReceived")]
+    public void Create([FromQuery] Guid rewardId, [FromQuery] Guid personId)
+    {
+        var person = context.People.FirstOrDefault(p => p.Id == personId);
+        var reward = context.Rewards.FirstOrDefault(p => p.Id == rewardId);
+
+        if (person != null && reward != null)
+        {
+            context.PeopleRewards.Add(new PersonReward(rewardId, personId, "Manually created"));
+            context.SaveChanges();
+        }
+    }
     [HttpPut]
     public void Update(Reward Reward)
     {
@@ -64,8 +76,8 @@ public class RewardsController : ControllerBase
         var Reward = context.Rewards.FirstOrDefault(p => p.Id == id);
         if (Reward != null)
         {
-            Reward.DateDeleted = DateTime.Now;
-            Update(Reward);
+            context.Remove(Reward);
+            context.SaveChanges();
         }
     }
 }

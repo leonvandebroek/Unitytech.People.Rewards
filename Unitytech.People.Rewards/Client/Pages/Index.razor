@@ -1,19 +1,28 @@
-﻿@page "/"
-@using Microsoft.AspNetCore.Authorization
+﻿@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using Unitytech.People.Rewards.Shared
+
 @attribute [Authorize]
+
 @inject HttpClient Http
 @inject DialogService DialogService
+@inject NotificationService notificationService
+@inject NotifierService Notifier
+@inject NavigationManager NavigationManager
+
 @implements IDisposable
+
+@page "/"
+@page "/people/index"
 
 <PageTitle>Leden</PageTitle>
 
 <h1>Heej!</h1>
 
 Welkom bij de People Rewards app.
+<RadzenButton Text=@($"Lid toevoegen") Click="@((args) => {
+                                                      NewPerson();})" />
 
-<RadzenButton Text=@($"Lid toevoegen") ButtonStyle="ButtonStyle.Primary" Click=@(() => { NewPerson(); }) />
 
 <RadzenDataGrid AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true"
                 Data="@people" TItem="Person">
@@ -26,16 +35,31 @@ Welkom bij de People Rewards app.
         <RadzenDataGridColumn TItem="Person" Property="BirthDate" Title="Verjaardag" FormatString="{0:d}" />
         <RadzenDataGridColumn TItem="Person" Property="MemberSince" Title="Lid sinds" />
         <RadzenDataGridColumn TItem="Person" Property="MemberUntil" Title="Lid tot" />
+        <RadzenDataGridColumn TItem="Person" Context="Person" Filterable="false" Sortable="false" TextAlign="TextAlign.Left">
+            <Template Context="Person">
+                <RadzenButton class="btn btn-info" Icon="launch" Size="ButtonSize.Medium" Click="@(e => GoToDetail(Person.Id))">
+                </RadzenButton>
+                <RadzenButton class="btn btn-warning" Icon="create" Size="ButtonSize.Medium" Click="@((args) => {
+                                                                           DialogService.Open<PersonCreate>($"Wijzigen",
+                                                                           new Dictionary<string, object>() { { "Person", Person }, { "IsEdit", true }  },
+                                                       new DialogOptions() { Width = "1200px" });
+                                                                       })" />
+                <RadzenButton class="btn btn-danger" Icon="delete" Size="ButtonSize.Medium" Click="@(e => Delete(Person.Id))">
+                </RadzenButton>
+            </Template>
+        </RadzenDataGridColumn>
     </Columns>
 </RadzenDataGrid>
 @code{
+
     Person[] people { get; set; }
 
-    public void Dispose()
+    protected override async Task OnInitializedAsync()
     {
-        // The DialogService is a singleton so it is advisable to unsubscribe.
-        DialogService.OnOpen -= Open;
-        DialogService.OnClose -= Close;
+        DialogService.OnOpen += Open;
+        DialogService.OnClose += Close;
+        Notifier.Notify += OnNotify;
+        GetPeople();
     }
 
     void Open(string title, Type type, Dictionary<string, object> parameters, DialogOptions options)
@@ -45,28 +69,81 @@ Welkom bij de People Rewards app.
 
     void Close(dynamic result)
     {
-
+        if (result != null && result)
+        {
+            Saved(new EventArgs());
+        }
     }
-
-    public async Task NewPerson()
+    public async void Saved(EventArgs e)
     {
-        await DialogService.OpenAsync<PersonCreate>($"Lid toevoegen",
-               new Dictionary<string, object>() { { "Person", new Person() } },
-           new DialogOptions() { Width = "700px", Height = "570px", Resizable = true, Draggable = true });
+        await Notifier?.Update();
+        ShowNotification(new NotificationMessage()
+        {
+            Summary = "Opgeslagen",
+            Detail = "Het item is opgeslagen.",
+            Severity = NotificationSeverity.Success,
+            Duration = 3000
+        });
     }
-
-    protected override async Task OnInitializedAsync()
+    public void NewPerson()
     {
-        DialogService.OnOpen += Open;
-        DialogService.OnClose += Close;
+        DialogService.Open<PersonCreate>($"Lid toevoegen",
+                                                       new Dictionary<string, object>() { { "Person", new Person() } },
+                                                       new DialogOptions() { Width = "1200px" });
+    }
+    protected async Task Delete(Guid id)
+    {
+        var result = await Http.DeleteAsync($"People?id={id}");
+        if (result.IsSuccessStatusCode)
+        {
+            await GetPeople();
 
+            ShowNotification(new NotificationMessage()
+            {
+                Summary = "Verwijderd",
+                Detail = $"Persoon is verwijderd.",
+                Severity = NotificationSeverity.Info,
+                Duration = 3000
+            });
+        }
+    }
+    public async Task GetPeople()
+    {
         try
         {
-            people = await Http.GetFromJsonAsync<Person[]>("People");
+            people = await Http.GetFromJsonAsync<Person[]>
+    ("People");
+            StateHasChanged();
         }
         catch (AccessTokenNotAvailableException exception)
         {
             exception.Redirect();
         }
     }
+    protected void GoToDetail(Guid Id)
+    {
+        NavigationManager.NavigateTo("people/detail/" + Id);
+    }
+    async void ShowNotification(NotificationMessage message)
+    {
+        notificationService.Notify(message);
+        await InvokeAsync(() => { StateHasChanged(); });
+    }
+    public async Task OnNotify()
+    {
+        await InvokeAsync(async () =>
+        {
+            await GetPeople();
+            StateHasChanged();
+        });
+    }
+
+
+    public void Dispose()
+    {
+        Notifier.Notify -= OnNotify;
+        DialogService.OnOpen -= Open;
+        DialogService.OnClose -= Close;
+    }
+
 }

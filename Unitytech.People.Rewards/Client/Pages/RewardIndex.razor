@@ -1,0 +1,152 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Unitytech.People.Rewards.Shared
+
+@attribute [Authorize]
+
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject NotificationService notificationService
+@inject NotifierService Notifier
+@inject NavigationManager NavigationManager
+
+@implements IDisposable
+
+@page "/rewards/index"
+
+<div class="col-md-12">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Jubileum momenten</h3>
+        </div>
+        <div class="card-body">
+
+
+            <RadzenButton Text=@($"Jubileum toevoegen") Click="@((args) => {
+                                                      NewReward();})" />
+
+
+            <RadzenDataGrid AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true"
+                            Data="@Rewards" TItem="Reward">
+                <Columns>
+                    <RadzenDataGridColumn TItem="Reward" Property="Image" Title="">
+                        <Template Context="Reward">
+                            <RadzenImage Path="@Reward.Image" Style="height:75px;width:75px"></RadzenImage>
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="Reward" Property="Title" Title="Moment" />
+                    <RadzenDataGridColumn TItem="Reward" Property="Description" Title="Omschrijving" />
+                    <RadzenDataGridColumn TItem="Reward" Property="IntervalInMonths" Title="Aantal jaren (maanden)">
+                        <Template Context="Reward">
+                            @(Reward.IntervalInMonths / 12) jaar (@Reward.IntervalInMonths maanden)
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="Reward" Context="Reward" Filterable="false" Sortable="false" TextAlign="TextAlign.Left">
+                        <Template Context="Reward">
+                            <RadzenButton class="btn btn-warning" Icon="create" Size="ButtonSize.Medium" Click="@((args) => {
+                                                                           DialogService.Open<RewardCreate>($"Wijzigen",
+                                                                           new Dictionary<string, object>() { { "Reward", Reward }, { "IsEdit", true }  },
+                                                       new DialogOptions() { Width = "1200px" });
+                                                                       })" />
+                            <RadzenButton class="btn btn-danger" Icon="delete" Size="ButtonSize.Medium" Click="@(e => Delete(Reward.Id))">
+                            </RadzenButton>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
+</div>
+@code{
+
+    Reward[] Rewards { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        DialogService.OnOpen += Open;
+        DialogService.OnClose += Close;
+        Notifier.Notify += OnNotify;
+        GetRewards();
+    }
+
+    void Open(string title, Type type, Dictionary<string, object> parameters, DialogOptions options)
+    {
+
+    }
+
+    void Close(dynamic result)
+    {
+        if (result != null && result)
+        {
+            Saved(new EventArgs());
+        }
+    }
+    public async void Saved(EventArgs e)
+    {
+        await Notifier?.Update();
+        ShowNotification(new NotificationMessage()
+        {
+            Summary = "Opgeslagen",
+            Detail = "Het item is opgeslagen.",
+            Severity = NotificationSeverity.Success,
+            Duration = 3000
+        });
+    }
+    public void NewReward()
+    {
+        DialogService.Open<RewardCreate>($"Lid toevoegen",
+                                                       new Dictionary<string, object>() { { "Reward", new Reward() } },
+                                                       new DialogOptions() { Width = "1200px" });
+    }
+    protected async Task Delete(Guid id)
+    {
+        var result = await Http.DeleteAsync($"Rewards?id={id}");
+        if (result.IsSuccessStatusCode)
+        {
+            await GetRewards();
+
+            ShowNotification(new NotificationMessage()
+            {
+                Summary = "Verwijderd",
+                Detail = $"Jubileum-moment is verwijderd.",
+                Severity = NotificationSeverity.Info,
+                Duration = 3000
+            });
+        }
+    }
+    public async Task GetRewards()
+    {
+        try
+        {
+            Rewards = await Http.GetFromJsonAsync<Reward[]>
+    ("Rewards");
+            StateHasChanged();
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+    }
+    async void ShowNotification(NotificationMessage message)
+    {
+        notificationService.Notify(message);
+        await InvokeAsync(() => { StateHasChanged(); });
+    }
+    public async Task OnNotify()
+    {
+        await InvokeAsync(async () =>
+        {
+            await GetRewards();
+            StateHasChanged();
+        });
+    }
+
+
+    public void Dispose()
+    {
+        Notifier.Notify -= OnNotify;
+        DialogService.OnOpen -= Open;
+        DialogService.OnClose -= Close;
+    }
+
+}

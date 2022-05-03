@@ -1,4 +1,6 @@
-﻿namespace Unitytech.People.Rewards.Shared
+﻿using System.Text.Json.Serialization;
+
+namespace Unitytech.People.Rewards.Shared
 {
     public class Reward
     {
@@ -14,6 +16,8 @@
             this.Image = image;
             this.AwardDocument = awardDocument;
         }
+
+        public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public string Image { get; set; }
@@ -34,5 +38,6 @@
             }
             return false;
         }
+
     }
 }

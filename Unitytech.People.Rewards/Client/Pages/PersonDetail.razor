@@ -1,0 +1,152 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Unitytech.People.Rewards.Shared
+
+@inject HttpClient Http
+
+@page "/people/detail/{PersonId:guid}"
+
+@if (Person != null)
+{
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Details van (@Person.Initials) @Person.FirstName @Person.MiddleName @Person.LastName </h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><NavLink href="/">Leden</NavLink></li>
+                        <li class="breadcrumb-item active">Lid: Details van (@Person.Initials) @Person.FirstName @Person.MiddleName @Person.LastName </li>
+                    </ol>
+                </div>
+            </div>
+        </div><!-- /.container-fluid -->
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary card-outline">
+                        <div class="card-body box-profile">
+                            <p class="text-muted text-center" style="white-space:pre-wrap">
+                                (@Person.Initials) @Person.FirstName @Person.MiddleName @Person.LastName
+                            </p>
+                            <ul class="list-group list-group-unbordered mb-3 col-md-4">
+                                <li class="list-group-item">
+                                    <b>Lidnummer: </b><br />
+                                    @Person.MemberNumber
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Geboortedatum: </b><br />
+                                    @Person.BirthDate.ToString("dd MMMM yyyy")
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Lid sinds: </b><br />
+                                    @Person.MemberSince.ToString("dd MMMM yyyy")
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Lid tot: </b><br />
+                                    @Person.MemberUntil.ToString("dd MMMM yyyy")
+                                </li>
+                            </ul>
+                            <ul class="list-group list-group-unbordered mb-3 col-md-4">
+                                <li class="list-group-item">
+                                    <b>E-mailadres: </b><br />
+                                    @Person.Email
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Telefoonnummer: </b><br />
+                                    @Person.Phone
+                                </li>
+                            </ul>
+                            <ul class="list-group list-group-unbordered mb-3 col-md-4">
+                                <li class="list-group-item">
+                                    <b>Adres: </b><br />
+                                    @Person.Street @Person.StreetNumber
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Postcode: </b><br />
+                                    @Person.Zipcode
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Plaats: </b><br />
+                                    @Person.City
+                                </li>
+                            </ul>
+                        </div>
+                        <!-- /.card-body -->
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                @if (Rewards != null)
+                {
+                    <PersonRewardsIndex PersonRewards="@Person.CalculateRewards(Rewards).ToList()"></PersonRewardsIndex>
+                }
+            </div>
+
+            <!-- /.card -->
+        </div>
+    </section>
+}
+else
+{
+    <section class=" content">
+        <p>Persoon aan het laden...</p>
+    </section>
+}
+
+
+@code {
+    [Parameter]
+    public Person Person { get; set; }
+    [Parameter]
+    public Guid PersonId { get; set; }
+    [Parameter]
+    public Reward[] Rewards { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (PersonId != null && PersonId != Guid.Empty)
+        {
+            await GetPerson();
+            await GetRewards();
+        }
+    }
+
+    public async Task GetPerson()
+    {
+        try
+        {
+            Person = await Http.GetFromJsonAsync<Person>($"People/GetById?id={PersonId}");
+            StateHasChanged();
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+        catch (Exception exception)
+        {
+
+        }
+    }
+    public async Task GetRewards()
+    {
+        try
+        {
+            Rewards = await Http.GetFromJsonAsync<Reward[]>($"Rewards");
+            StateHasChanged();
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+        catch (Exception exception)
+        {
+
+        }
+    }
+}
+

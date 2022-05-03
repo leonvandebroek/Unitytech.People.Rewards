@@ -38,20 +38,34 @@ public class PeopleController : ControllerBase
     [HttpPost]
     public void Create(Person person)
     {
-        context.People.Add(person);
-        context.SaveChanges();
+        try
+        {
+            context.People.Add(person);
+            context.SaveChanges();
+        }
+        catch (Exception exc1)
+        {
+            _logger.LogError(exc1, "Exception on create");
+        }
     }
     [HttpPut]
     public void Update(Person person)
     {
-        context.People.Update(person);
-        context.SaveChanges();
+        try
+        {
+            context.People.Update(person);
+            context.SaveChanges();
+        }
+        catch (Exception exc1)
+        {
+            _logger.LogError(exc1, "Exception on update");
+        }
     }
     [HttpDelete]
     public void Delete(Guid id)
     {
         var person = context.People.FirstOrDefault(p => p.Id == id);
-        if(person != null)
+        if (person != null)
         {
             person.DateDeleted = DateTime.Now;
             Update(person);

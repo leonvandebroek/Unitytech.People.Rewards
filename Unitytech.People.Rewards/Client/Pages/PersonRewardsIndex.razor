@@ -1,0 +1,59 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Unitytech.People.Rewards.Shared
+
+@attribute [Authorize]
+
+@inject HttpClient Http
+@inject DialogService DialogService
+@inject NotificationService notificationService
+@inject NotifierService Notifier
+@inject NavigationManager NavigationManager
+
+@implements IDisposable
+
+
+@if (PersonRewards != null && PersonRewards.Count > 0)
+{
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Jubileum-momenten</h3>
+            </div>
+            <div class="card-body">
+                <RadzenDataGrid AllowFiltering="true" AllowPaging="true" PageSize="5" AllowSorting="true"
+                                Data="@PersonRewards" TItem="PersonReward">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="PersonReward" Property="Reward.Image" Title="">
+                            <Template Context="PersonReward">
+                                <RadzenImage Path="@PersonReward.Reward.Image" Style="height:75px;width:75px"></RadzenImage>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="PersonReward" Property="Reward.Name" Title="Moment" />
+                        <RadzenDataGridColumn TItem="PersonReward" Property="Reward.Description" Title="Omschrijving" />
+                        <RadzenDataGridColumn TItem="PersonReward" Property="Reward.IntervalInMonths" Title="Aantal jaren (maanden)">
+                            <Template Context="PersonReward">
+                                @(PersonReward.Reward.IntervalInMonths / 12) jaar (@PersonReward.Reward.IntervalInMonths maanden)
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <p>Geen jubileum-momenten gevonden</p>
+}
+
+@code {
+    [Parameter]
+    public List<PersonReward> PersonRewards { get; set; } = new List<PersonReward>();
+
+    public void Dispose()
+    {
+
+    }
+}
+
