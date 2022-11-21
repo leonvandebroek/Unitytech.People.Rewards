@@ -46,11 +46,19 @@ public class RewardsController : ControllerBase
         }
         return null;
     }
+
     [HttpPost]
     public void Create(Reward Reward)
     {
-        context.Rewards.Add(Reward);
-        context.SaveChanges();
+        try
+        {
+            context.Rewards.Add(Reward);
+            context.SaveChanges();
+        }
+        catch (Exception exc1)
+        {
+            Console.WriteLine(exc1);
+        }
     }
     [HttpPost("AwardReceived")]
     public void Create([FromQuery] Guid rewardId, [FromQuery] Guid personId)
@@ -64,6 +72,7 @@ public class RewardsController : ControllerBase
             context.SaveChanges();
         }
     }
+
     [HttpPut]
     public void Update(Reward Reward)
     {

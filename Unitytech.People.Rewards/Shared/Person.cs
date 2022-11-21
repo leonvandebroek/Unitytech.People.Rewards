@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Text.Json.Serialization;
+
 namespace Unitytech.People.Rewards.Shared
 {
     public class Person
@@ -58,7 +60,7 @@ namespace Unitytech.People.Rewards.Shared
         public DateTime MemberSince { get; set; }
         public DateTime MemberUntil { get; set; }
 
-        public virtual ICollection<PersonReward> ReceivedRewards { get; set; }
+        public virtual ICollection<PersonReward>? ReceivedRewards { get; set; }
 
         public ICollection<PersonReward> CalculateRewards(Reward[] rewards)
         {
@@ -66,10 +68,18 @@ namespace Unitytech.People.Rewards.Shared
 
             foreach (var reward in rewards)
             {
-                if (reward.IsUpForReward(this))
+                if (this.ReceivedRewards?.Any(p => p.RewardId == reward.Id) == false)
                 {
-                    personRewards.Add(new PersonReward(reward, this, "Automatically added"));
+                    if (reward.IsUpForReward(this))
+                    {
+                        personRewards.Add(new PersonReward(reward, this, "Automatically added"));
+                    }
                 }
+                else
+                {
+                    personRewards.Add(this.ReceivedRewards?.FirstOrDefault(p => p.RewardId == reward.Id));
+                }
+
             }
             return personRewards;
         }
@@ -103,10 +113,12 @@ namespace Unitytech.People.Rewards.Shared
         public Guid Id { get; set; }
 
         public Guid RewardId { get; set; }
-        public virtual Reward Reward { get; set; }
+
+        public virtual Reward? Reward { get; set; }
 
         public Guid PersonId { get; set; }
-        public virtual Person Person { get; set; }
+
+        public virtual Person? Person { get; set; }
 
         public DateTime IssuedDate { get; set; }
         public DateTime ReceivedDate { get; set; }

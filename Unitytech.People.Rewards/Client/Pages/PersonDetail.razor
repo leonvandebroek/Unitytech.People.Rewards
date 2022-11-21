@@ -33,57 +33,66 @@
                             <p class="text-muted text-center" style="white-space:pre-wrap">
                                 (@Person.Initials) @Person.FirstName @Person.MiddleName @Person.LastName
                             </p>
-                            <ul class="list-group list-group-unbordered mb-3 col-md-4">
-                                <li class="list-group-item">
-                                    <b>Lidnummer: </b><br />
-                                    @Person.MemberNumber
-                                </li>
-                                <li class="list-group-item">
-                                    <b>Geboortedatum: </b><br />
-                                    @Person.BirthDate.ToString("dd MMMM yyyy")
-                                </li>
-                                <li class="list-group-item">
-                                    <b>Lid sinds: </b><br />
-                                    @Person.MemberSince.ToString("dd MMMM yyyy")
-                                </li>
-                                <li class="list-group-item">
-                                    <b>Lid tot: </b><br />
-                                    @Person.MemberUntil.ToString("dd MMMM yyyy")
-                                </li>
-                            </ul>
-                            <ul class="list-group list-group-unbordered mb-3 col-md-4">
-                                <li class="list-group-item">
-                                    <b>E-mailadres: </b><br />
-                                    @Person.Email
-                                </li>
-                                <li class="list-group-item">
-                                    <b>Telefoonnummer: </b><br />
-                                    @Person.Phone
-                                </li>
-                            </ul>
-                            <ul class="list-group list-group-unbordered mb-3 col-md-4">
-                                <li class="list-group-item">
-                                    <b>Adres: </b><br />
-                                    @Person.Street @Person.StreetNumber
-                                </li>
-                                <li class="list-group-item">
-                                    <b>Postcode: </b><br />
-                                    @Person.Zipcode
-                                </li>
-                                <li class="list-group-item">
-                                    <b>Plaats: </b><br />
-                                    @Person.City
-                                </li>
-                            </ul>
+                            <div class="row">
+                                <ul class="list-group list-group-unbordered mb-2 col-md-4">
+                                    <li class="list-group-item">
+                                        <b>Lidnummer: </b><br />
+                                        @Person.MemberNumber
+                                    </li>
+                                    <li class="list-group-item">
+                                        <b>Geboortedatum: </b><br />
+                                        @Person.BirthDate.ToString("dd MMMM yyyy")
+                                    </li>
+                                    <li class="list-group-item">
+                                        <b>Lid sinds: </b><br />
+                                        @Person.MemberSince.ToString("dd MMMM yyyy")
+                                    </li>
+                                    <li class="list-group-item">
+                                        <b>Lid tot: </b><br />
+                                        @if (Person.MemberUntil == DateTime.MinValue)
+                                        {
+                                            <p>Actief lid</p>
+                                        }
+                                        else
+                                        {
+                                            @Person.MemberUntil.ToString("dd MMMM yyyy")
+                                        }
+                                    </li>
+                                </ul>
+                                <ul class="list-group list-group-unbordered mb-2 col-md-4">
+                                    <li class="list-group-item">
+                                        <b>E-mailadres: </b><br />
+                                        @Person.Email
+                                    </li>
+                                    <li class="list-group-item">
+                                        <b>Telefoonnummer: </b><br />
+                                        @Person.Phone
+                                    </li>
+                                </ul>
+                                <ul class="list-group list-group-unbordered mb-3 col-md-4">
+                                    <li class="list-group-item">
+                                        <b>Adres: </b><br />
+                                        @Person.Street @Person.StreetNumber
+                                    </li>
+                                    <li class="list-group-item">
+                                        <b>Postcode: </b><br />
+                                        @Person.Zipcode
+                                    </li>
+                                    <li class="list-group-item">
+                                        <b>Plaats: </b><br />
+                                        @Person.City
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                         <!-- /.card-body -->
                     </div>
                 </div>
             </div>
             <div class="row">
-                @if (Rewards != null)
+                @if (Rewards != null && PersonRewards != null)
                 {
-                    <PersonRewardsIndex PersonRewards="@Person.CalculateRewards(Rewards).ToList()"></PersonRewardsIndex>
+                    <PersonRewardsIndex PersonId="PersonId"></PersonRewardsIndex>
                 }
             </div>
 
@@ -106,6 +115,8 @@ else
     public Guid PersonId { get; set; }
     [Parameter]
     public Reward[] Rewards { get; set; }
+    [Parameter]
+    public PersonReward[] PersonRewards { get; set; }
 
     protected async override Task OnInitializedAsync()
     {
@@ -113,6 +124,15 @@ else
         {
             await GetPerson();
             await GetRewards();
+            await GetPersonRewards();
+            if (Person != null && PersonRewards != null && PersonRewards.Any())
+            {
+                Person.ReceivedRewards = PersonRewards;
+                foreach (var item in Person.ReceivedRewards)
+                {
+                    item.Person = Person;
+                }
+            }
         }
     }
 
@@ -137,6 +157,22 @@ else
         try
         {
             Rewards = await Http.GetFromJsonAsync<Reward[]>($"Rewards");
+            StateHasChanged();
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+        catch (Exception exception)
+        {
+
+        }
+    }
+    public async Task GetPersonRewards()
+    {
+        try
+        {
+            PersonRewards = await Http.GetFromJsonAsync<PersonReward[]>($"PersonRewards/ByPersonId?id={PersonId}");
             StateHasChanged();
         }
         catch (AccessTokenNotAvailableException exception)

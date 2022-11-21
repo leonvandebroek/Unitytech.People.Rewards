@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Unitytech.People.Rewards.Data.Entities;
 using Unitytech.People.Rewards.Data.Repository;
 

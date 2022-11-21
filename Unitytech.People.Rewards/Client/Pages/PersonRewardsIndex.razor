@@ -26,14 +26,50 @@
                     <Columns>
                         <RadzenDataGridColumn TItem="PersonReward" Property="Reward.Image" Title="">
                             <Template Context="PersonReward">
-                                <RadzenImage Path="@PersonReward.Reward.Image" Style="height:75px;width:75px"></RadzenImage>
+                                <RadzenImage Path="@PersonReward.Reward?.Image" Style="height:75px;width:75px"></RadzenImage>
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="PersonReward" Property="Reward.Name" Title="Moment" />
                         <RadzenDataGridColumn TItem="PersonReward" Property="Reward.Description" Title="Omschrijving" />
                         <RadzenDataGridColumn TItem="PersonReward" Property="Reward.IntervalInMonths" Title="Aantal jaren (maanden)">
                             <Template Context="PersonReward">
-                                @(PersonReward.Reward.IntervalInMonths / 12) jaar (@PersonReward.Reward.IntervalInMonths maanden)
+                                @(PersonReward.Reward?.IntervalInMonths / 12) jaar (@PersonReward.Reward?.IntervalInMonths maanden)
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="PersonReward" Title="Ontvangen op">
+                            <Template Context="PersonReward">
+                                @if (PersonReward.ReceivedDate == DateTime.MinValue)
+                                {
+                                    <p class="text-warning">(Nog) niet uitgereikt</p>
+                                }
+                                else
+                                {
+                                    @PersonReward.ReceivedDate.ToString("dd-MM-yyyy")
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="PersonReward" Title="">
+                            <Template Context="PersonReward">
+                                @if (PersonReward.Id == Guid.Empty)
+                                {
+                                    <RadzenButton class="btn btn-warning" Icon="check_circle_outline" Size="ButtonSize.Medium" Click="@((args) =>
+                                                                                                                          {
+                                                                                                                              DialogService.Open<PersonRewardEdit>($"Deze Reward uitreiken",
+                                                                                                                              new Dictionary<string, object>() { { "PersonReward", PersonReward }, { "IsEdit", false } },
+                                                                                                          new DialogOptions() { Width = "1200px" });
+                                                                                                                          })" />
+                                }
+                                else
+                                {
+                                    <RadzenButton class="btn btn-warning" Icon="create" Size="ButtonSize.Medium" Click="@((args) =>
+                                                                                                                      {
+                                                                                                                          DialogService.Open<PersonRewardEdit>($"Deze Reward wijzigen",
+                                                                                                                          new Dictionary<string, object>() { { "PersonReward", PersonReward }, { "IsEdit", true } },                                                                                                      new DialogOptions() { Width = "1200px" });
+                                                                                                                      })" />
+                                    <RadzenButton class="btn btn-danger" Icon="restore" Size="ButtonSize.Medium" Click="@(e => Delete(PersonReward.Id))" />
+
+                                }
                             </Template>
                         </RadzenDataGridColumn>
                     </Columns>
@@ -49,11 +85,90 @@ else
 
 @code {
     [Parameter]
+    public Guid PersonId { get; set; }
+
     public List<PersonReward> PersonRewards { get; set; } = new List<PersonReward>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        DialogService.OnOpen += Open;
+        DialogService.OnClose += Close;
+        Notifier.Notify += OnNotify;
+        await GetRewards();
+    }
+
+    void Open(string title, Type type, Dictionary<string, object> parameters, DialogOptions options)
+    {
+
+    }
+
+    void Close(dynamic result)
+    {
+        if (result != null && result)
+        {
+            Saved(new EventArgs());
+        }
+    }
+    public async void Saved(EventArgs e)
+    {
+        await Notifier?.Update();
+        ShowNotification(new NotificationMessage()
+        {
+            Summary = "Opgeslagen",
+            Detail = "Het item is opgeslagen.",
+            Severity = NotificationSeverity.Success,
+            Duration = 3000
+        });
+    }
+
+    protected async Task Delete(Guid id)
+    {
+        var result = await Http.DeleteAsync($"PersonRewards?id={id}");
+        if (result.IsSuccessStatusCode)
+        {
+            await GetRewards();
+
+            ShowNotification(new NotificationMessage()
+            {
+                Summary = "Uitreiking hersteld",
+                Detail = $"De uitreiking is teruggedraaid.",
+                Severity = NotificationSeverity.Info,
+                Duration = 5000
+            });
+        }
+    }
+    public async Task GetRewards()
+    {
+        try
+        {
+            PersonRewards = await Http.GetFromJsonAsync<List<PersonReward>>($"PersonRewards/ByPersonId?id={PersonId}");
+            StateHasChanged();
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+    }
+    async void ShowNotification(NotificationMessage message)
+    {
+        notificationService.Notify(message);
+        await InvokeAsync(() => { StateHasChanged(); });
+    }
+    public async Task OnNotify()
+    {
+        await InvokeAsync(async () =>
+        {
+            await GetRewards();
+            StateHasChanged();
+        });
+    }
+
 
     public void Dispose()
     {
-
+        Notifier.Notify -= OnNotify;
+        DialogService.OnOpen -= Open;
+        DialogService.OnClose -= Close;
     }
 }
 

@@ -1,0 +1,13 @@
+﻿{
+  "profiles": {
+    "Unitytech.People.Rewards.CalculationAssistant": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
+
+

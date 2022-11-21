@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  unitytechpeoplerewards:
+    image: ${DOCKER_REGISTRY-}unitytechpeoplerewards
+    build:
+      context: .
+      dockerfile: Unitytech.People.Rewards/Server/Dockerfile

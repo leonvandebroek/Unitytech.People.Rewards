@@ -1,0 +1,62 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Unitytech.People.Rewards.Shared
+@inject DialogService DialogService
+@inject HttpClient Http
+@inject NotifierService Notifier
+
+<RadzenCard>
+    <RadzenTemplateForm Data="@PersonReward" Submit="@((PersonReward args) => { Submit(args); })">
+        <h4 class="mb-4">Naam</h4>
+        <p Class="w-100">@PersonReward.Reward?.Name</p>
+
+        <h4 class="mb-4">Notitie</h4>
+        <RadzenHtmlEditor @bind-Value="@PersonReward.Note" Class="w-100" />
+
+        <h4 class="mb-4">Datum uitgereikt</h4>
+        <RadzenDatePicker @bind-Value="@PersonReward.ReceivedDate" Class="w-100" />
+
+        <h4 class="mb-4">Datum vastgesteld</h4>
+        <RadzenDatePicker @bind-Value="@PersonReward.IssuedDate" Class="w-100" />
+
+        <RadzenButton ButtonType="ButtonType.Submit" Icon="save" Text="Save" />
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+    [Parameter]
+    public PersonReward PersonReward { get; set; } = new PersonReward();
+    [Parameter]
+    public bool IsEdit { get; set; } = false;
+
+    async void Submit(PersonReward arg)
+    {
+        try
+        {
+            if (!IsEdit)
+            {
+                PersonReward.Person = null;
+                PersonReward.Reward = null;
+                var result = await Http.PostAsJsonAsync<PersonReward>("PersonRewards", PersonReward);
+            }
+            else
+            {
+                PersonReward.Person = null;
+                PersonReward.Reward = null;
+                var result = await Http.PutAsJsonAsync<PersonReward>("PersonRewards", PersonReward);
+            }
+            await Notifier?.Update();
+            DialogService.Close();
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception);
+        }
+    }
+
+}
+

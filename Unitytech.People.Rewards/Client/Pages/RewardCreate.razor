@@ -3,6 +3,7 @@
 @using Unitytech.People.Rewards.Shared
 @inject DialogService DialogService
 @inject HttpClient Http
+@inject NotifierService Notifier
 
 <RadzenCard>
     <RadzenTemplateForm Data="@Reward" Submit="@((Reward args) => { Submit(args); })">
@@ -43,6 +44,8 @@
             {
                 var result = await Http.PutAsJsonAsync<Reward>("Rewards", Reward);
             }
+            await Notifier?.Update();
+
             DialogService.Close();
         }
         catch (AccessTokenNotAvailableException exception)
